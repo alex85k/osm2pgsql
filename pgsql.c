@@ -7,6 +7,7 @@
 #include <libpq-fe.h>
 #include "osmtypes.h" /* For exit_nicely() */
 #include "pgsql.h"
+#include "config.h"
 
 void escape(char *out, int len, const char *in)
 { 

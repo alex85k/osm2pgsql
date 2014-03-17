@@ -127,7 +127,7 @@ static void *next_chunk(size_t count, size_t size) {
         static size_t pos = 0;
         void *result;
         pos += count * size;
-        result = blockCache + cacheSize - pos + SAFETY_MARGIN;
+        result = (char*) blockCache + cacheSize - pos + SAFETY_MARGIN;
         
         return result;
     } else {

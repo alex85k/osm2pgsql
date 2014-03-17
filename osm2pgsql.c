@@ -31,9 +31,13 @@
 #include <string.h>
 #include <assert.h>
 #include <getopt.h>
-#include <libgen.h>
 #include <time.h>
 
+#ifdef HAVE_LIBGEN_H
+#include <libgen.h>
+#else
+#define basename /*SKIP IT*/
+#endif
 #include <libpq-fe.h>
 
 #include <libxml/xmlstring.h>
