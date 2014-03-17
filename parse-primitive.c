@@ -33,7 +33,6 @@ in a production environment.
  */
 
 #define _GNU_SOURCE
-#define UNUSED  __attribute__ ((unused))
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -41,6 +40,7 @@ in a production environment.
 #include <assert.h>
 #include <ctype.h>
 
+#include "gccattribute.h"
 #include "osmtypes.h"
 #include "sanitizer.h"
 #include "reprojection.h"

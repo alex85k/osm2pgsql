@@ -14,6 +14,7 @@
 #include <string.h>
 #include <errno.h>
 #include "expire-tiles.h"
+#include "config.h"
 #include "output.h"
 #include "pgsql.h"
 #include "build_geometry.h"

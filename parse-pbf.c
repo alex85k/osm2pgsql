@@ -25,10 +25,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef _MSC_VER
+#include <winsock2.h>
+#else
 #include <arpa/inet.h>
+#endif
 #include <time.h>
 
 #include <zlib.h>
+
+#include "gccattribute.h"
 
 #include "osmtypes.h"
 #include "output.h"
@@ -37,7 +43,6 @@
 #include "fileformat.pb-c.h"
 #include "osmformat.pb-c.h"
 
-#define UNUSED  __attribute__ ((unused))
 
 #define MAX_BLOCK_HEADER_SIZE 64*1024
 #define MAX_BLOB_SIZE 32*1024*1024

@@ -4,6 +4,7 @@
 
 #include <libpq-fe.h>
 
+#include "config.h"
 #include "osmtypes.h"
 #include "middle.h"
 #include "output.h"

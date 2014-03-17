@@ -5,11 +5,11 @@
 #include <assert.h>
 #include <errno.h>
 
+#include "gccattribute.h"
 #include "osmtypes.h"
 #include "output.h"
 #include "output-null.h"
 
-#define UNUSED  __attribute__ ((unused))
 
 static void null_out_cleanup(void) {
 }
