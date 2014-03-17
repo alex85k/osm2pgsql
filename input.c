@@ -1,18 +1,24 @@
 #define _FILE_OFFSET_BITS 64
 #define _LARGEFILE64_SOURCE
 
-#ifdef __MINGW_H
-# include <windows.h>
+#ifdef _MSC_VER
+#include <windows.h>
+#include <io.h>
+#define STDIN_FILENO 0
 #else
-#include <stdio.h>
+#ifdef __MINGW_H
+#include <windows.h>
+#else
 #include <unistd.h>
-#include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <zlib.h>
 #endif
+#endif
+#include <string.h>
+#include <stdio.h>
+#include <fcntl.h>
 
+#include <zlib.h>
 #include <bzlib.h>
 #include <string.h>
 

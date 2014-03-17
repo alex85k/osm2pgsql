@@ -34,6 +34,7 @@
 #include <time.h>
 #include <fcntl.h>
 
+#include "config.h"
 #include "osmtypes.h"
 #include "reprojection.h"
 #include "output.h"
@@ -49,7 +50,7 @@ static int loglevel= 0;  /* logging to stderr; */
    3: extended logging; */
 #define DP(f) fprintf(stderr,"- Debug: " #f "\n");
 #define DPv(f,...) fprintf(stderr,"- Debug: " #f "\n",__VA_ARGS__);
-#if __WIN32__
+#ifdef __WIN32__
 #define NL "\r\n"  /* use CR/LF as new-line sequence */
   #define off_t off64_t
   #define lseek lseek64
@@ -115,7 +116,7 @@ static inline void createtimestamp(uint64_t v,char* sp) {
   int i;
 
   vtime= v;
-  #if __WIN32__
+  #ifdef __WIN32__
   memcpy(&tm,gmtime(&vtime),sizeof(tm));
   #else
   gmtime_r(&vtime,&tm);

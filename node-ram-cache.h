@@ -8,6 +8,8 @@
 #ifndef NODE_RAM_CACHE_H
 #define NODE_RAM_CACHE_H
 
+#include "gccattribute.h"
+
 #define ALLOC_SPARSE 1
 #define ALLOC_DENSE 2
 #define ALLOC_DENSE_CHUNK 4
@@ -19,8 +21,6 @@
 static int scale = 100;
 #define DOUBLE_TO_FIX(x) ((int)((x) * scale + 0.4))
 #define FIX_TO_DOUBLE(x) (((double)x) / scale)
-
-#define UNUSED  __attribute__ ((unused))
 
 struct ramNode {
 #ifdef FIXED_POINT

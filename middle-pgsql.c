@@ -1045,8 +1045,10 @@ static void pgsql_iterate_ways(int (*callback)(osmid_t id, struct keyval *tags, 
         if (out_options->flat_node_cache_enabled) shutdown_node_persistent_cache();
         exit(0);
     } else {
-        for (p = 0; p < noProcs; p++) wait(NULL);
-        fprintf(stderr, "\nAll child processes exited\n");
+        #ifdef HAVE_SYS_WAIT_H
+           for (p = 0; p < noProcs; p++) wait(NULL);
+           fprintf(stderr, "\nAll child processes exited\n");
+        #endif
     }
 
 #if HAVE_MMAP
@@ -1083,12 +1085,12 @@ static int pgsql_rels_set(osmid_t id, struct member *members, int member_count, 
     struct keyval member_list;
     char buf[64];
     
-    osmid_t node_parts[member_count],
-            way_parts[member_count],
-            rel_parts[member_count];
+	osmid_t *node_parts = (osmid_t*) malloc(member_count*sizeof(osmid_t)) ,
+		*way_parts = (osmid_t*)malloc(member_count*sizeof(osmid_t)),
+		*rel_parts = (osmid_t*)malloc(member_count*sizeof(osmid_t));
     int node_count = 0, way_count = 0, rel_count = 0;
     
-    osmid_t all_parts[member_count];
+	osmid_t *all_parts = (osmid_t*) malloc(member_count*sizeof(osmid_t));
     int all_count = 0;
     initList( &member_list );    
     for( i=0; i<member_count; i++ )
@@ -1136,6 +1138,7 @@ static int pgsql_rels_set(osmid_t id, struct member *members, int member_count, 
     if( paramValues[4] )
         free(paramValues[4]);
     resetList(&member_list);
+	free(node_parts); free(rel_parts); free(way_parts); free(all_parts);
     return 0;
 }
 
@@ -1412,8 +1415,10 @@ static void pgsql_iterate_relations(int (*callback)(osmid_t id, struct member *m
         if (out_options->flat_node_cache_enabled) shutdown_node_persistent_cache();
         exit(0);
     } else {
-        for (p = 0; p < noProcs; p++) wait(NULL);
-        fprintf(stderr, "\nAll child processes exited\n");
+        #ifdef HAVE_SYS_WAIT_H
+		     for (p = 0; p < noProcs; p++) wait(NULL);
+             fprintf(stderr, "\nAll child processes exited\n");
+        #endif
     }
 
 #if HAVE_MMAP
