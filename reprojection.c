@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <proj_api.h>
 #include <math.h>
+#include "config.h"
 
 #include "reprojection.h"
 

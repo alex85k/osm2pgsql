@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <math.h>
+#include <io.h>
 
 #include "osmtypes.h"
 #include "output.h"
@@ -41,9 +42,49 @@ static struct ramNodeBlock * readNodeBlockCache;
 static struct binary_search_array * readNodeBlockCacheIdx;
 
 
-static int scale;
 static int cache_already_written = 0;
 
+#ifdef _MSC_VER
+int
+fsync(int fd)
+{
+	HANDLE h = (HANDLE)_get_osfhandle(fd);
+	DWORD err;
+
+	if (h == INVALID_HANDLE_VALUE)
+	{
+		errno = EBADF;
+		return -1;
+	}
+
+	if (!FlushFileBuffers(h))
+	{
+		/* Translate some Windows errors into rough approximations of Unix
+		* errors.  MSDN is useless as usual - in this case it doesn't
+		* document the full range of errors.
+		*/
+		err = GetLastError();
+		switch (err)
+		{
+		case ERROR_ACCESS_DENIED:
+			/* For a read-only handle, fsync should succeed, even though we have
+			no way to sync the access-time changes.  */
+			return 0;
+
+			/* eg. Trying to fsync a tty. */
+		case ERROR_INVALID_HANDLE:
+			errno = EINVAL;
+			break;
+
+		default:
+			errno = EIO;
+		}
+		return -1;
+	}
+
+	return 0;
+}
+#endif
 
 static void writeout_dirty_nodes(osmid_t id)
 {
@@ -575,7 +616,7 @@ void init_node_persistent_cache(const struct output_options *options, int append
     /* Setup the file for the node position cache */
     if (append_mode)
     {
-        node_cache_fd = open(node_cache_fname, O_RDWR, S_IRUSR | S_IWUSR);
+        node_cache_fd = open(node_cache_fname, O_RDWR, S_IREAD | S_IWRITE);
         if (node_cache_fd < 0)
         {
             fprintf(stderr, "Failed to open node cache file: %s\n",
@@ -587,12 +628,12 @@ void init_node_persistent_cache(const struct output_options *options, int append
     {
         if (cache_already_written)
         {
-            node_cache_fd = open(node_cache_fname, O_RDWR, S_IRUSR | S_IWUSR);
+            node_cache_fd = open(node_cache_fname, O_RDWR, S_IREAD | S_IWRITE);
         }
         else
         {
             node_cache_fd = open(node_cache_fname, O_RDWR | O_CREAT | O_TRUNC,
-                    S_IRUSR | S_IWUSR);
+                    S_IREAD | S_IWRITE);
         }
 
         if (node_cache_fd < 0)
