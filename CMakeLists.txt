@@ -16,7 +16,7 @@ if("${PROJECT_SOURCE_DIR}" STREQUAL "${PROJECT_BINARY_DIR}")
 endif()
 
 SET(DATA_DIR \".\")
-SET(PACKAGE_VERSION \"0.70-win-cmake\")
+SET(PACKAGE_VERSION \"0.85-win-cmake\")
 
 OPTION(USE64BITID "Build with 64 bit OSM ID" ON)
 OPTION(BUILD_PBF "Build with PBF format support" OFF)
@@ -24,9 +24,10 @@ OPTION(BUILD_PBF "Build with PBF format support" OFF)
 ADD_DEFINITIONS( -DOSM2PGSQL_DATADIR=${DATA_DIR} )
 ADD_DEFINITIONS( -DVERSION=${PACKAGE_VERSION} )
 
-if ( WIN32 )
+if ( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" )
     add_definitions(-D_CRT_SECURE_NO_WARNINGS -wd4996)
-#    add_definitions(-D__attribute__(x)="")
+    set (CMAKE_EXE_LINKER_FLAGS /VERBOSE:LIB)
+#   add_definitions(-D__attribute__(x)="")
 endif()
 
 CHECK_INCLUDE_FILES (termios.h HAVE_TERMIOS_H)
@@ -55,25 +56,35 @@ endif( ZLIB_FOUND )
 
 
 if ( BUILD_PBF )
-find_package(Protobuf)
+    find_package(Protobuf)
 if ( PROTOBUF_INCLUDE_DIR AND PROTOBUF_LIBRARY )
-    message(FATAL_ERROR "Sorry, currently unsupported in this cmake-based version")
-# TODO: find protoc-c correctly 
-    SET( PROTOBUF_PROTOC_C_EXECUTABLE ???)
-    include_directories(${PROTOBUF_INCLUDE_DIR})
-    set(BUILD_READER_PBF TRUE)
-    set(PBF_READER_SOURCES parse-pbf.c)                  	
-    execute_process(COMMAND ${PROTOBUF_PROTOC_C_EXECUTABLE} --proto_path=protobuf --c_out=. protobuf/fileformat.proto protobuf/osmformat.proto
-                WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    FIND_LIBRARY(PROTOBUF_C_LIBRARY protobuf-c)
+    FIND_PROGRAM(PROTOBUF_C_EXECUTABLE NAMES protoc-c
+                 DOC "The Protobuf-C Compiler" )
+    FIND_PATH(PROTOBUF_C_INCLUDE protobuf-c/protobuf-c.h)
+    if ( PROTOBUF_C_LIBRARY  AND PROTOBUF_C_EXECUTABLE AND PROTOBUF_C_INCLUDE) 
+      set(PBF_READER_SOURCES parse-pbf.c protobuf/fileformat.pb-c.c protobuf/osmformat.pb-c.c)
+
+      add_custom_command(OUTPUT protobuf/fileformat.pb-c.c protobuf/osmformat.pb-c.c 
+                   COMMAND ${PROTOBUF_C_EXECUTABLE} -I${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/protobuf/fileformat.proto --c_out=${CMAKE_BINARY_DIR}
+                   COMMAND ${PROTOBUF_C_EXECUTABLE} -I${CMAKE_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/protobuf/osmformat.proto --c_out=${CMAKE_BINARY_DIR}
+                   )
+
+      include_directories(${PROTOBUF_C_INCLUDE})
+      include_directories(${CMAKE_BINARY_DIR}/protobuf)
+      ADD_DEFINITIONS(-DBUILD_READER_PBF)
+    else()
+      message(FATAL_ERROR "Please specify the Protobuf-C library location")
+    endif()
 else()
     MARK_AS_ADVANCED(CLEAR PROTOBUF_INCLUDE_DIR PROTOBUF_LITE_LIBRARY )
-    message(FATAL_ERROR "Please, specify the Google PROTOBUF library dir")
+    message(FATAL_ERROR "Please specify the Google PROTOBUF library dir")
 endif()
 endif()
 
 find_package(LibXml2)
 if ( LIBXML2_LIBRARIES )
-include_directories(${LIBXML2_INCLUDE_DIR})
+    include_directories(${LIBXML2_INCLUDE_DIR})
 else()
     MARK_AS_ADVANCED(CLEAR LIBXML2_INCLUDE_DIR LIBXML2_LIBRARIES)
     message(FATAL_ERROR "Please, specify the LibXML2 library dir")
@@ -165,9 +176,18 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DI
 
 add_executable(osm2pgsql ${osm2pgsql_SOURCES})
 
+if (BUILD_PBF)
+  if (WIN32)
+   SET(WIN_MORE_LIBS ws2_32)
+  endif()
+endif()
+
 target_link_libraries(osm2pgsql ${GEOS_LIBRARY} ${PROJ_LIBRARY} 
   ${LIBXML2_LIBRARIES} ${GETOPT_LIBRARY} ${PostgreSQL_LIBRARY} 
-  ${LUA_LIBRARY} ${BZIP2_LIBRARY} ${PROTOBUF_LITE_LIBRARY} ${ZLIB_LIBRARIES} 
+  ${LUA_LIBRARY} ${BZIP2_LIBRARY} ${PROTOBUF_C_LIBRARY} ${WIN_MORE_LIBS} ${ZLIB_LIBRARIES} 
   )
+
+
+
 
 INCLUDE(CPack)
