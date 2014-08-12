@@ -1090,7 +1090,7 @@ static int pgsql_rels_set(osmid_t id, struct member *members, int member_count, 
 		*rel_parts = (osmid_t*)malloc(member_count*sizeof(osmid_t));
     int node_count = 0, way_count = 0, rel_count = 0;
     
-	osmid_t all_parts = (osmid_t*) malloc(member_count*sizeof(osmid_t));
+	osmid_t *all_parts = (osmid_t*) malloc(member_count*sizeof(osmid_t));
     int all_count = 0;
     initList( &member_list );    
     for( i=0; i<member_count; i++ )
