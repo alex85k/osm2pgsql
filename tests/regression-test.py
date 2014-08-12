@@ -3,18 +3,24 @@
 import unittest
 import psycopg2
 import os
-from pwd import getpwnam
+# from pwd import getpwnam
 import subprocess
 
-full_import_file="tests/liechtenstein-2013-08-03.osm.pbf"
-multipoly_import_file="tests/test_multipolygon.osm" #This file contains a number of different multi-polygon test cases
-diff_import_file="tests/000466354.osc.gz"
-diff_multipoly_import_file="tests/test_multipolygon_diff.osc" #This file contains a number of different multi-polygon diff processing test cases
+
+tmp_table = os.path.join(os.getcwd(), 'psql-tablespace')
+
+usr, pwd = 'postgres', 'MY_PASSWORD'
+os.environ['PGPASS'] = pwd
+credentials = ['--username', usr, '--host', 'localhost']
+conn_str = "user={} password={} ".format(usr, pwd)
+
+full_import_file="liechtenstein-2013-08-03.osm.pbf"
+multipoly_import_file="test_multipolygon.osm"  #This file contains a number of different multi-polygon test cases
+diff_import_file="000466354.osc.gz"
+diff_multipoly_import_file="test_multipolygon_diff.osc"  #This file contains a number of different multi-polygon diff processing test cases
 
 created_tablespace = 0
 
-#****************************************************************
-#****************************************************************
 sql_test_statements=[
     ( 0, 'Basic point count', 'SELECT count(*) FROM planet_osm_point;', 1342 ),
     ( 1, 'Basic line count', 'SELECT count(*) FROM planet_osm_line;', 3300 ),
@@ -217,8 +223,6 @@ sql_test_statements=[
     ( 119, 'Multipolygon tags on both outer and relation with additional tags on relation (absence of outer way)',
       'SELECT count(*) FROM planet_osm_polygon WHERE osm_id = 140', 0),
     ]
-#****************************************************************
-#****************************************************************
 
 
 class NonSlimRenderingTestSuite(unittest.TestSuite):
@@ -251,11 +255,11 @@ class SlimRenderingTestSuite(unittest.TestSuite):
         self.addTest(BasicSlimTestCase("Hstore name column", ["-z", "name:"], [0,1,2,3],[6,7,8,9]))
         self.addTest(BasicSlimTestCase("Hstore", ["-k"], [51,52,53,54],[55,56,57,58]))
         self.addTest(BasicSlimTestCase("Hstore all", ["-j"], [51,52,53,54,93,94,95,96],[55,56,57,58, 97, 98, 99, 100]))
-        self.addTest(BasicSlimTestCase("Hstore index", ["--hstore", "--hstore-add-index"], [51,52,53,54],[55,56,57,58]))        
+        self.addTest(BasicSlimTestCase("Hstore index", ["--hstore", "--hstore-add-index"], [51,52,53,54],[55,56,57,58]))
         #tests dont check for osm_timestamp which is currently missing in the pbf parser
         self.addTest(BasicSlimTestCase("Extra tags hstore match only", ["-x", "-k", "--hstore-match-only"], [0,1,2,3],[6,7,8,9]))
         self.addTest(BasicSlimTestCase("Extra tags hstore all", ["-j", "-x"], [51,52,53,54,59,60,61],[55,56,57,58]))
-        
+
         self.addTest(BasicSlimTestCase("--tablespace-main-data", ["--tablespace-main-data", "tablespacetest"], [0,1,2,3,13,91,92],[6,7,8,9]))
         self.addTest(BasicSlimTestCase("--tablespace-main-index", ["--tablespace-main-index", "tablespacetest"], [0,1,2,3,13,91,92],[6,7,8,9]))
         self.addTest(BasicSlimTestCase("--tablespace-slim-data", ["--tablespace-slim-data", "tablespacetest"], [0,1,2,3,13,91,92],[6,7,8,9]))
@@ -321,19 +325,18 @@ class CompleteTestSuite(unittest.TestSuite):
         self.addTest(MultiPolygonSlimRenderingTestSuite())
         self.addTest(SlimGazetteerTestSuite())
 
-#****************************************************************
+
 class ThirdTestCase(unittest.TestCase):
     def testOne(self):
         assert 1 == 1
     def testTwo(self):
         assert 2 == 2
 
-#****************************************************************
 
 class BaseTestCase(unittest.TestCase):
     def dbConnect(self):
         try:
-            self.conn=psycopg2.connect("dbname='osm2pgsql-test'")
+            self.conn=psycopg2.connect(conn_str + "dbname='osm2pgsql-test'")
             self.conn.autocommit = True
             self.cur = self.conn.cursor()
         except Exception, e:
@@ -366,41 +369,41 @@ class BaseTestCase(unittest.TestCase):
         finally:
             self.dbClose()
 
-#****************************************************************
 
 class BaseNonSlimTestCase(BaseTestCase):
-    
+
     def setUpGeneric(self, parameters, file):
-        proc = subprocess.Popen(["./osm2pgsql", "-Sdefault.style", "-dosm2pgsql-test", "-C100"] + parameters + [full_import_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(["osm2pgsql", "-Sdefault.style", "-dosm2pgsql-test", "-C100"] + credentials + parameters + [full_import_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (outp, outerr) = proc.communicate()
         self.assertEqual (proc.returncode, 0, "Execution of osm2pgsql with options: '%s' failed:\n%s\n%s\n" % (str(parameters), outp, outerr))
 
-class BaseSlimTestCase(BaseTestCase):    
-        
+
+class BaseSlimTestCase(BaseTestCase):
+
     def setUpGeneric(self, parameters, file):
-        proc = subprocess.Popen(["./osm2pgsql", "--slim", "-Sdefault.style", "-dosm2pgsql-test", "-C100"] + parameters + [file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(["osm2pgsql", "--slim", "-Sdefault.style", "-dosm2pgsql-test", "-C100"] + credentials + parameters + [file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (outp, outerr) = proc.communicate()
         self.assertEqual (proc.returncode, 0, "Execution of osm2pgsql --slim with options: '%s' failed:\n%s\n%s\n" % (str(parameters), outp, outerr))
 
     def updateGeneric(self, parameters, file):
-        proc = subprocess.Popen(["./osm2pgsql", "--slim", "--append", "-Sdefault.style", "-dosm2pgsql-test", "-C100"] + parameters + [file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(["osm2pgsql", "--slim", "--append", "-Sdefault.style", "-dosm2pgsql-test", "-C100"] + credentials + parameters + [file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (outp, outerr) = proc.communicate()
         self.assertEqual (proc.returncode, 0, "Execution of osm2pgsql --slim --append with options: '%s' failed:\n%s\n%s\n" % (str(parameters), outp, outerr))
-        
-class BaseGazetteerTestCase(BaseTestCase):    
-        
+
+
+class BaseGazetteerTestCase(BaseTestCase):
+
     def setUpGeneric(self, parameters, file):
-        proc = subprocess.Popen(["./osm2pgsql", "--slim", "-Ogazetteer", "-Sdefault.style", "-dosm2pgsql-test"] + parameters + [file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(["osm2pgsql", "--slim", "-Ogazetteer", "-Sdefault.style", "-dosm2pgsql-test"] + credentials + parameters + [file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (outp, outerr) = proc.communicate()
         self.assertEqual (proc.returncode, 0, "Execution of osm2pgsql --slim gazetteer options: '%s' failed:\n%s\n%s\n" % (str(parameters), outp, outerr))
 
     def updateGeneric(self, parameters, file):
-        proc = subprocess.Popen(["./osm2pgsql", "--slim", "-Ogazetteer", "--append", "-Sdefault.style", "-dosm2pgsql-test"] + parameters + [file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = subprocess.Popen(["osm2pgsql", "--slim", "-Ogazetteer", "--append", "-Sdefault.style", "-dosm2pgsql-test"] + credentials + parameters + [file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         (outp, outerr) = proc.communicate()
         self.assertEqual (proc.returncode, 0, "Execution of osm2pgsql --slim --append gazetteer options: '%s' failed:\n%s\n%s\n" % (str(parameters), outp, outerr))
-        
 
-#****************************************************************
+
 class BasicNonSlimTestCase(BaseNonSlimTestCase):
 
     def __init__(self, name, parameters, initialStatements):
@@ -438,6 +441,7 @@ class BasicSlimTestCase(BaseSlimTestCase):
         print "Running diff-import for " + self.name
         self.updateGeneric(self.parameters, diff_import_file)
         self.executeStatements(self.postDiffStatements)
+
 
 class MultipolygonSlimTestCase(BaseSlimTestCase):
 
@@ -483,13 +487,10 @@ class BasicGazetteerTestCase(BaseGazetteerTestCase):
         self.executeStatements(self.postDiffStatements)
 
 
-
-#****************************************************************
-#****************************************************************
 def setupDB():
     print "Setting up test database"
     try:
-        gen_conn=psycopg2.connect("dbname='template1'")
+        gen_conn=psycopg2.connect(conn_str + "dbname='template1'")
         gen_conn.autocommit = True
     except Exception, e:
         print "I am unable to connect to the database."
@@ -513,7 +514,7 @@ def setupDB():
         gen_conn.close()
 
     try:
-        test_conn=psycopg2.connect("dbname='osm2pgsql-test'")
+        test_conn=psycopg2.connect(conn_str + "dbname='osm2pgsql-test'")
         test_conn.autocommit = True
     except Exception, e:
         print "I am unable to connect to the database." + e
@@ -539,11 +540,12 @@ def setupDB():
                 ### This makes postgresql read from /tmp
                 ## Does this have security implications like opening this to a possible symlink attack?
                 try:
-                    os.mkdir("/tmp/psql-tablespace")
-                    returncode = subprocess.call(["/usr/bin/sudo", "/bin/chown", "postgres.postgres", "/tmp/psql-tablespace"])
-                    test_cur.execute("""CREATE TABLESPACE tablespacetest LOCATION '/tmp/psql-tablespace'""")
+                    os.mkdir(tmp_table)
+                    if not os.name is 'nt':
+                        returncode = subprocess.call(["/usr/bin/sudo", "/bin/chown", "postgres.postgres", tmp_table])
+                    test_cur.execute("""CREATE TABLESPACE tablespacetest LOCATION '{}'""".format(tmp_table))
                 except Exception, e:
-                    os.rmdir("/tmp/psql-tablespace")
+                    os.rmdir(tmp_table)
                     self.assertEqual(0, 1, "Failed to create tablespace")
         except Exception, e:
             print "Failed to create directory for tablespace" + str(e)
@@ -556,20 +558,21 @@ def setupDB():
             # Guess the directory from the postgres version.
             # TODO: make the postgisdir configurable. Probably
             # only works on Debian-based distributions at the moment.
-            postgisdir = ('/usr/share/postgresql/%d.%d/contrib' %
-                        (test_conn.server_version / 10000, (test_conn.server_version / 100) % 100))
-            for fl in os.listdir(postgisdir):
-                if fl.startswith('postgis'):
-                    newdir = os.path.join(postgisdir, fl)
-                    if os.path.isdir(newdir):
-                        postgisdir = newdir
-                        break
-            else:
-                raise Exception('Cannot find postgis directory.')
-            pgscript = open(os.path.join(postgisdir, 'postgis.sql'),'r').read()
-            test_cur.execute(pgscript)
-            pgscript = open(os.path.join(postgisdir, 'spatial_ref_sys.sql'), 'r').read()
-            test_cur.execute(pgscript)
+            if not os.name is 'nt':
+                postgisdir = ('/usr/share/postgresql/%d.%d/contrib' %
+                            (test_conn.server_version / 10000, (test_conn.server_version / 100) % 100))
+                for fl in os.listdir(postgisdir):
+                    if fl.startswith('postgis'):
+                        newdir = os.path.join(postgisdir, fl)
+                        if os.path.isdir(newdir):
+                            postgisdir = newdir
+                            break
+                else:
+                    raise Exception('Cannot find postgis directory.')
+                pgscript = open(os.path.join(postgisdir, 'postgis.sql'),'r').read()
+                test_cur.execute(pgscript)
+                pgscript = open(os.path.join(postgisdir, 'spatial_ref_sys.sql'), 'r').read()
+                test_cur.execute(pgscript)
 
         try:
             test_cur.execute("""CREATE EXTENSION hstore;""")
@@ -581,10 +584,11 @@ def setupDB():
         test_cur.close()
         test_conn.close()
 
+
 def tearDownDB():
     print "Cleaning up test database"
     try:
-        gen_conn=psycopg2.connect("dbname='template1'")
+        gen_conn=psycopg2.connect(conn_str + "dbname='template1'")
         gen_conn.autocommit = True
         gen_cur = gen_conn.cursor()
     except Exception, e:
@@ -602,7 +606,11 @@ def tearDownDB():
     gen_cur.close()
     gen_conn.close()
     if (created_tablespace == 1):
-        returncode = subprocess.call(["/usr/bin/sudo", "/bin/rmdir", "/tmp/psql-tablespace"])
+        if os.name is 'nt':
+            if os.path.exists(tmp_table):
+                os.rmdir(tmp_table)
+        else:
+            returncode = subprocess.call(["/usr/bin/sudo", "/bin/rmdir", tmp_table])
 
 
 if __name__ == "__main__":
@@ -617,7 +625,6 @@ if __name__ == "__main__":
 
     if options.osm_file:
         full_import_file = options.osm_file
-
 
 ts2 = CompleteTestSuite()
 try:
