@@ -49,7 +49,7 @@
 
 #define NANO_DEGREE .000000001
 
-static uint32_t get_length(FILE *input)
+static size_t get_length(FILE *input)
 {
   char buf[4];
 
