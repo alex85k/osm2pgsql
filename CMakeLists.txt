@@ -26,7 +26,8 @@ ADD_DEFINITIONS( -DVERSION=${PACKAGE_VERSION} )
 
 if ( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC" )
     add_definitions(-D_CRT_SECURE_NO_WARNINGS -wd4996)
-    set (CMAKE_EXE_LINKER_FLAGS /VERBOSE:LIB)
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /VERBOSE:LIB /STACK:30000000")
+    message("Linker flags: ${CMAKE_EXE_LINKER_FLAGS}")
 #   add_definitions(-D__attribute__(x)="")
 endif()
 
