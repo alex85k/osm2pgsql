@@ -39,6 +39,7 @@
 #endif
 
 static int node_cache_fd;
+static FILE* node_cache_file;
 static const char * node_cache_fname;
 static int append_mode;
 
@@ -107,8 +108,8 @@ static void writeout_dirty_nodes(osmid_t id)
             exit_nicely();
             
         };
-        if (write(node_cache_fd, writeNodeBlock.nodes,
-                WRITE_NODE_BLOCK_SIZE * sizeof(struct ramNode))
+        if (fwrite(writeNodeBlock.nodes,
+                sizeof(struct ramNode), WRITE_NODE_BLOCK_SIZE, node_cache_file)
                 < WRITE_NODE_BLOCK_SIZE * sizeof(struct ramNode))
         {
             fprintf(stderr, "Failed to write out node cache: %s\n",
@@ -124,8 +125,8 @@ static void writeout_dirty_nodes(osmid_t id)
                     strerror(errno));
             exit_nicely();
         };
-        if (write(node_cache_fd, &cacheHeader,
-                sizeof(struct persistentCacheHeader))
+        if (fwrite(&cacheHeader,
+                sizeof(struct persistentCacheHeader), 1, node_cache_file)
                 != sizeof(struct persistentCacheHeader))
         {
             fprintf(stderr, "Failed to update persistent cache header: %s\n",
@@ -153,8 +154,8 @@ static void writeout_dirty_nodes(osmid_t id)
                             strerror(errno));
                     exit_nicely();
                 };
-                if (write(node_cache_fd, readNodeBlockCache[i].nodes,
-                        READ_NODE_BLOCK_SIZE * sizeof(struct ramNode))
+                if (fwrite(readNodeBlockCache[i].nodes,
+                        sizeof(struct ramNode), READ_NODE_BLOCK_SIZE, node_cache_file )
                         < READ_NODE_BLOCK_SIZE * sizeof(struct ramNode))
                 {
                     fprintf(stderr, "Failed to write out node cache: %s\n",
@@ -246,8 +247,8 @@ static void persistent_cache_expand_cache(osmid_t block_offset)
     for (i = cacheHeader.max_initialised_id >> READ_NODE_BLOCK_SHIFT;
             i <= block_offset; i++)
     {
-        if (write(node_cache_fd, dummyNodes,
-                READ_NODE_BLOCK_SIZE * sizeof(struct ramNode))
+        if (fwrite(dummyNodes,
+                sizeof(struct ramNode), READ_NODE_BLOCK_SIZE, node_cache_file)
                 < READ_NODE_BLOCK_SIZE * sizeof(struct ramNode))
         {
             fprintf(stderr, "Failed to expand persistent node cache: %s\n",
@@ -262,7 +263,7 @@ static void persistent_cache_expand_cache(osmid_t block_offset)
                 strerror(errno));
         exit_nicely();
     };
-    if (write(node_cache_fd, &cacheHeader, sizeof(struct persistentCacheHeader))
+    if (fwrite(&cacheHeader, sizeof(struct persistentCacheHeader), 1, node_cache_file)
             != sizeof(struct persistentCacheHeader))
     {
         fprintf(stderr, "Failed to update persistent cache header: %s\n",
@@ -318,8 +319,8 @@ static int persistent_cache_load_block(osmid_t block_offset)
                     strerror(errno));
             exit_nicely();
         };
-        if (write(node_cache_fd, readNodeBlockCache[block_id].nodes,
-                READ_NODE_BLOCK_SIZE * sizeof(struct ramNode))
+        if (fwrite(readNodeBlockCache[block_id].nodes,
+                sizeof(struct ramNode), READ_NODE_BLOCK_SIZE, node_cache_file)
                 < READ_NODE_BLOCK_SIZE * sizeof(struct ramNode))
         {
             fprintf(stderr, "Failed to write out node cache: %s\n",
@@ -350,8 +351,8 @@ static int persistent_cache_load_block(osmid_t block_offset)
                 strerror(errno));
         exit_nicely();
     };
-    if (read(node_cache_fd, readNodeBlockCache[block_id].nodes,
-            READ_NODE_BLOCK_SIZE * sizeof(struct ramNode))
+    if (fread(readNodeBlockCache[block_id].nodes,
+            sizeof(struct ramNode), READ_NODE_BLOCK_SIZE, node_cache_file)
             != READ_NODE_BLOCK_SIZE * sizeof(struct ramNode))
     {
         fprintf(stderr, "Failed to read from node cache: %s\n",
@@ -366,8 +367,8 @@ static int persistent_cache_load_block(osmid_t block_offset)
 
 static void persisten_cache_nodes_set_create_writeout_block()
 {
-    if (write(node_cache_fd, writeNodeBlock.nodes,
-              WRITE_NODE_BLOCK_SIZE * sizeof(struct ramNode))
+    if (fwrite(writeNodeBlock.nodes,
+              sizeof(struct ramNode), WRITE_NODE_BLOCK_SIZE, node_cache_file)
         < WRITE_NODE_BLOCK_SIZE * sizeof(struct ramNode))
     {
         fprintf(stderr, "Failed to write out node cache: %s\n",
@@ -653,6 +654,7 @@ void init_node_persistent_cache(const struct output_options *options, int append
                     strerror(errno));
             exit_nicely();
         };
+        node_cache_file = fdopen(node_cache_fd,"rw");
         if (cache_already_written == 0)
         {
 
@@ -691,8 +693,8 @@ void init_node_persistent_cache(const struct output_options *options, int append
                         strerror(errno));
                 exit_nicely();
             };
-            if (write(node_cache_fd, &cacheHeader,
-                    sizeof(struct persistentCacheHeader))
+            if (fwrite(&cacheHeader,
+                    sizeof(struct persistentCacheHeader), 1, node_cache_file)
                     != sizeof(struct persistentCacheHeader))
             {
                 fprintf(stderr, "Failed to write persistent cache header: %s\n",
@@ -707,7 +709,7 @@ void init_node_persistent_cache(const struct output_options *options, int append
                 strerror(errno));
         exit_nicely();
     };
-    if (read(node_cache_fd, &cacheHeader, sizeof(struct persistentCacheHeader))
+    if (fread(&cacheHeader, sizeof(struct persistentCacheHeader), 1, node_cache_file)
             != sizeof(struct persistentCacheHeader))
     {
         fprintf(stderr, "Failed to read persistent cache header: %s\n",
@@ -758,7 +760,7 @@ void shutdown_node_persistent_cache()
                 strerror(errno));
         exit_nicely();
     };
-    if (write(node_cache_fd, &cacheHeader, sizeof(struct persistentCacheHeader))
+    if (fwrite(&cacheHeader, sizeof(struct persistentCacheHeader), 1, node_cache_file)
             != sizeof(struct persistentCacheHeader))
     {
         fprintf(stderr, "Failed to update persistent cache header: %s\n",
