@@ -187,7 +187,6 @@ target_link_libraries(osm2pgsql ${GEOS_LIBRARY} ${PROJ_LIBRARY}
   ${LUA_LIBRARY} ${BZIP2_LIBRARY} ${PROTOBUF_C_LIBRARY} ${WIN_MORE_LIBS} ${ZLIB_LIBRARIES} 
   )
 
-
-
+install(TARGETS osm2pgsql DESTINATION bin)
 
 INCLUDE(CPack)
