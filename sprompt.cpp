@@ -62,11 +62,12 @@
 
 #include <libpq-fe.h>
 
-#ifdef __MINGW_H
-# include <windows.h>
-#else
-# define HAVE_TERMIOS_H
-# include <termios.h>
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+
+#ifdef _WIN32
+#include <windows.h>
 #endif
 
 char *

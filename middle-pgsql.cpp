@@ -34,6 +34,10 @@
 #endif
 #endif 
 
+#ifdef _WIN32
+using namespace std;
+#endif
+
 #include <libpq-fe.h>
 
 #include "osmtypes.hpp"
