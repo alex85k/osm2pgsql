@@ -769,12 +769,12 @@ int middle_pgsql_t::relations_set(osmid_t id, struct member *members, int member
     struct keyval member_list;
     char buf[64];
     
-    osmid_t node_parts[member_count],
-            way_parts[member_count],
-            rel_parts[member_count];
+    osmid_t *node_parts = (osmid_t*) malloc(member_count*sizeof(osmid_t)),
+            *way_parts = (osmid_t*) malloc(member_count*sizeof(osmid_t)),
+            *rel_parts = (osmid_t*) malloc(member_count*sizeof(osmid_t)),
+            *all_parts = (osmid_t*) malloc(member_count*sizeof(osmid_t));
+
     int node_count = 0, way_count = 0, rel_count = 0;
-    
-    osmid_t all_parts[member_count];
     int all_count = 0;
     keyval::initList( &member_list );    
     for( i=0; i<member_count; i++ )
@@ -803,10 +803,15 @@ int middle_pgsql_t::relations_set(osmid_t id, struct member *members, int member
       buffer = (char *)alloca(length);
       if( snprintf( buffer, length, "%" PRIdOSMID "\t%d\t%d\t%s\t%s\t%s\n",
               id, node_count, node_count+way_count, parts_buf, member_buf, tag_buf ) > (length-10) )
-      { fprintf( stderr, "buffer overflow relation id %" PRIdOSMID "\n", id); return 1; }
+      {
+        fprintf( stderr, "buffer overflow relation id %" PRIdOSMID "\n", id);
+        free(node_parts); free(rel_parts); free(way_parts); free(all_parts);
+        return 1;
+      }
       free(tag_buf);
       keyval::resetList(&member_list);
       pgsql_CopyData(__FUNCTION__, rel_table->sql_conn, buffer);
+      free(node_parts); free(rel_parts); free(way_parts); free(all_parts);
       return 0;
     }
     buffer = (char *)alloca(64);
@@ -826,6 +831,7 @@ int middle_pgsql_t::relations_set(osmid_t id, struct member *members, int member
     if( paramValues[4] )
         free((void *)paramValues[4]);
     keyval::resetList(&member_list);
+    free(node_parts); free(rel_parts); free(way_parts); free(all_parts);
     return 0;
 }
 
