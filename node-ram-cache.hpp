@@ -9,6 +9,7 @@
 #define NODE_RAM_CACHE_H
 
 #include "osmtypes.hpp"
+#include "unused.hpp"
 
 #include <boost/noncopyable.hpp>
 
@@ -16,8 +17,6 @@
 #define ALLOC_DENSE 2
 #define ALLOC_DENSE_CHUNK 4
 #define ALLOC_LOSSY 8
-
-#define UNUSED  __attribute__ ((unused))
 
 /* Store +-20,000km Mercator co-ordinates as fixed point 32bit number with maximum precision */
 #define FIXED_POINT

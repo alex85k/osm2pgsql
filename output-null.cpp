@@ -7,11 +7,10 @@
 
 #include <boost/make_shared.hpp>
 
+#include "unused.hpp"
 #include "osmtypes.hpp"
 #include "output-null.hpp"
 #include "options.hpp"
-
-#define UNUSED  __attribute__ ((unused))
 
 void output_null_t::cleanup() {
 }

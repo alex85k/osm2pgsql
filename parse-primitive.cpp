@@ -32,7 +32,6 @@ in a production environment.
 
  */
 
-#define UNUSED  __attribute__ ((unused))
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -46,6 +45,7 @@ in a production environment.
 #include "parse-primitive.hpp"
 #include "output.hpp"
 #include "util.hpp"
+#include "unused.hpp"
 
 
 char *extractAttribute(char **token, int tokens, const char *attname)

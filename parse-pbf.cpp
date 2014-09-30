@@ -36,10 +36,7 @@
 
 #include "parse-pbf.hpp"
 #include "output.hpp"
-
-
-
-#define UNUSED  __attribute__ ((unused))
+#include "unused.hpp"
 
 #define MAX_BLOCK_HEADER_SIZE 64*1024
 #define MAX_BLOB_SIZE 32*1024*1024
