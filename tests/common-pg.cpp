@@ -12,6 +12,12 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+#ifdef _MSC_VER
+#include <windows.h>
+int getpid() {return 0;}
+#define sleep Sleep
+#endif
+
 namespace fs = boost::filesystem;
 
 namespace pg {
@@ -80,7 +86,11 @@ tempdb::tempdb()
             << "  sudo mkdir -p /tmp/psql-tablespace\n"
             << "  sudo /bin/chown postgres.postgres /tmp/psql-tablespace\n"
             << "  psql -c \"CREATE TABLESPACE tablespacetest LOCATION "
+#ifndef _WIN32
             << "'/tmp/psql-tablespace'\" postgres\n";
+#else
+            << "'psql-tablespace'\" postgres\n";
+#endif
         throw std::runtime_error(out.str());
     }
     

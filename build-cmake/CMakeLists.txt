@@ -103,7 +103,7 @@ else()
 endif()
 
 # first try to find the version
-find_package(Boost 1.48 COMPONENTS system chrono atomic thread date_time REQUIRED)
+find_package(Boost 1.48 COMPONENTS system chrono atomic thread date_time filesystem REQUIRED)
 include_directories(${Boost_INCLUDE_DIR})
 
 
@@ -152,12 +152,14 @@ endif()
 
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 if (USE64BITID)
    ADD_DEFINITIONS( -DOSMID64 )
 endif()
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.in ${CMAKE_CURRENT_BINARY_DIR}/config.h)
+
 
 SET (osm2pgsql_SOURCES 
    osm2pgsql.cpp
@@ -244,16 +246,48 @@ if (BUILD_PBF)
   endif()
 endif()
 
-target_link_libraries(osm2pgsql_lib ${Boost_LIBRARIES} ${GEOS_LIBRARY} ${PROJ_LIBRARY} 
+set (LIBS ${Boost_LIBRARIES} ${GEOS_LIBRARY} ${PROJ_LIBRARY} 
   ${LIBXML2_LIBRARIES} ${GETOPT_LIBRARY} ${PostgreSQL_LIBRARY} 
-  ${LUA_LIBRARY} ${BZIP2_LIBRARY} ${PROTOBUF_C_LIBRARY} ${WIN_MORE_LIBS} ${ZLIB_LIBRARIES} 
-  )
+  ${LUA_LIBRARY} ${BZIP2_LIBRARY} ${PROTOBUF_C_LIBRARY} ${WIN_MORE_LIBS} ${ZLIB_LIBRARIES} )
 
-target_link_libraries(osm2pgsql osm2pgsql_lib ${Boost_LIBRARIES} ${GEOS_LIBRARY} ${PROJ_LIBRARY} 
-  ${LIBXML2_LIBRARIES} ${GETOPT_LIBRARY} ${PostgreSQL_LIBRARY} 
-  ${LUA_LIBRARY} ${BZIP2_LIBRARY} ${PROTOBUF_C_LIBRARY} ${WIN_MORE_LIBS} ${ZLIB_LIBRARIES} 
-  )
+target_link_libraries(osm2pgsql_lib ${LIBS})
+
+target_link_libraries(osm2pgsql osm2pgsql_lib ${LIBS})
+
+add_executable(test-parse-xml2 tests/test-parse-xml2.cpp)
+target_link_libraries(test-parse-xml2 osm2pgsql_lib)
+
+add_executable(test-middle-ram tests/test-middle-ram.cpp tests/middle-tests.cpp)
+target_link_libraries(test-middle-ram osm2pgsql_lib)
+
+add_executable(test-middle-pgsql tests/test-middle-pgsql.cpp tests/middle-tests.cpp tests/common-pg.cpp)
+target_link_libraries(test-middle-pgsql osm2pgsql_lib)
+
+add_executable(test-output-multi-line tests/test-output-multi-line.cpp tests/common-pg.cpp)
+target_link_libraries(test-output-multi-line osm2pgsql_lib)
+
+add_executable(test-output-multi-point tests/test-output-multi-point.cpp tests/common-pg.cpp)
+target_link_libraries(test-output-multi-point osm2pgsql_lib)
+
+add_executable(test-output-multi-point-multi-table tests/test-output-multi-point-multi-table.cpp tests/common-pg.cpp)
+target_link_libraries(test-output-multi-point-multi-table osm2pgsql_lib)
+
+add_executable(test-output-multi-polygon tests/test-output-multi-polygon.cpp tests/common-pg.cpp)
+target_link_libraries(test-output-multi-polygon osm2pgsql_lib)
+
+add_executable(test-output-pgsql tests/test-output-pgsql.cpp tests/common-pg.cpp)
+target_link_libraries(test-output-pgsql osm2pgsql_lib)
+
+add_executable(test-pgsql-escape tests/test-pgsql-escape.cpp)
+target_link_libraries(test-pgsql-escape osm2pgsql_lib)
+
+add_executable(test-parse-options tests/test-parse-options.cpp)
+target_link_libraries(test-parse-options osm2pgsql_lib)
+
+add_executable(test-expire-tiles tests/test-expire-tiles.cpp)
+target_link_libraries(test-expire-tiles osm2pgsql_lib)
 
 install(TARGETS osm2pgsql DESTINATION bin)
+install(TARGETS osm2pgsql_lib DESTINATION lib)
 
 INCLUDE(CPack)
