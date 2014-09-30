@@ -239,7 +239,7 @@ int processOsmHeader(void *data, size_t length)
     return 0;
   }
   
-  header_block__free_unpacked (hmsg, &protobuf_c_default_allocator);
+  header_block__free_unpacked (hmsg, NULL);
 
   return 1;
 }
@@ -523,7 +523,7 @@ int parse_pbf_t::processOsmData(struct osmdata_t *osmdata, void *data, size_t le
     if (!processOsmDataRelations(osmdata, group, string_table)) return 0;
   }
 
-  primitive_block__free_unpacked (pmsg, &protobuf_c_default_allocator);
+  primitive_block__free_unpacked (pmsg, NULL);
 
   return 1;
 }
@@ -598,8 +598,8 @@ int parse_pbf_t::streamFile(const char *filename, const int UNUSED, osmdata_t *o
       }
     }
 
-    blob__free_unpacked (blob_msg, &protobuf_c_default_allocator);
-    block_header__free_unpacked (header_msg, &protobuf_c_default_allocator);
+    blob__free_unpacked (blob_msg, NULL);
+    block_header__free_unpacked (header_msg, NULL);
   } while (!feof(input));
 
   if (!feof(input)) {
