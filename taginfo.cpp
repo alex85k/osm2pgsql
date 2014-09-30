@@ -8,6 +8,10 @@
 #include <boost/format.hpp>
 #include <errno.h>
 
+#ifdef _WIN32
+# define strtok_r strtok_s
+#endif
+
 /* NOTE: section below for flags genuinely is static and
  * constant, so there's no need to hoist this into a per
  * class variable. It doesn't get modified, so it's safe

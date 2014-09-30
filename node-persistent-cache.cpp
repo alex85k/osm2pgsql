@@ -22,6 +22,11 @@
 
 #include <stdexcept>
 
+#ifdef _MSC_VER
+#define lseek64 _lseeki64
+#define S_IRUSR S_IREAD
+#define S_IWUSR S_IWRITE
+#else
 #ifdef __APPLE__
   #define lseek64 lseek
 #else
@@ -31,7 +36,8 @@
   #else
   #error Flat nodes cache requires a 64 bit capable seek
   #endif
-  #endif
+#endif
+#endif
 #endif
 
 void node_persistent_cache::writeout_dirty_nodes(osmid_t id)
