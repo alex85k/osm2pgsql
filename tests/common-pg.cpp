@@ -12,6 +12,12 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/algorithm/string/predicate.hpp>
 
+#ifdef _MSC_VER
+#include <windows.h>
+int getpid() {return 0;}
+#define sleep Sleep
+#endif
+
 namespace fs = boost::filesystem;
 
 namespace pg {
