@@ -1,0 +1,16 @@
+#cmakedefine HAVE_TERMIOS_H
+#cmakedefine HAVE_LIBGEN_H
+#cmakedefine HAVE_LSEEK64
+#cmakedefine HAVE_POSIX_FALLOCATE
+#cmakedefine HAVE_POSIX_FADVICE
+#cmakedefine HAVE_SYNC_FILE_RANGE
+#cmakedefine HAVE_FORK
+#cmakedefine HAVE_LUA
+#cmakedefine SIZEOF_OFF_T ${SIZEOF_OFF_T}
+
+#ifdef _MSC_VER
+#define snprintf _snprintf
+#define strcasecmp _stricmp
+#define alloca _alloca
+#define __WIN32__
+#endif
