@@ -29,12 +29,28 @@ std::shared_ptr<PGresult> pgsql_exec_simple(PGconn *sql_conn, const ExecStatusTy
     return pgsql_exec_simple(sql_conn, expect, sql.c_str());
 }
 
+FILE* sqlFile = nullptr;
+void pgsql_exec_simple_set_redirect(char *filename)
+{
+    if (sqlFile != nullptr) {
+        fclose(sqlFile);
+        sqlFile = nullptr;
+    }
+    if (filename != nullptr) {
+        sqlFile = fopen(filename, "a");
+    }
+}
+
 std::shared_ptr<PGresult> pgsql_exec_simple(PGconn *sql_conn, const ExecStatusType expect, const char *sql)
 {
     PGresult* res;
 #ifdef DEBUG_PGSQL
     fprintf( stderr, "Executing: %s\n", sql );
 #endif
+    if (sqlFile != nullptr) {
+        fprintf( sqlFile, "%s;\n", sql );
+        fflush(sqlFile);
+    }
     res = PQexec(sql_conn, sql);
     if (PQresultStatus(res) != expect) {
         PQclear(res);

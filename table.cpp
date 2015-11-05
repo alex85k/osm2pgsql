@@ -218,6 +218,12 @@ void table_t::stop()
         time(&start);
 
         fprintf(stderr, "Sorting data and creating indexes for %s\n", name.c_str());
+        char* sqlFilename = getenv("INDEX_SQL_FILE");
+        fprintf(stderr, "To skip indexing set INDEX_SQL_FILE environment variable before running\n", sqlFilename);
+        if (sqlFilename != nullptr) {
+           fprintf(stderr, "Saving sql to %s without executing immediately\n", sqlFilename);
+           pgsql_exec_simple_set_redirect(sqlFilename);
+        }
 
         // Special handling for empty geometries because geohash chokes on
         // empty geometries on postgis 1.5.
@@ -257,7 +263,10 @@ void table_t::stop()
         pgsql_exec_simple(sql_conn, PGRES_COMMAND_OK, (fmt("GRANT SELECT ON %1% TO PUBLIC") % name).str());
         pgsql_exec_simple(sql_conn, PGRES_COMMAND_OK, (fmt("ANALYZE %1%") % name).str());
         time(&end);
-        fprintf(stderr, "All indexes on %s created in %ds\n", name.c_str(), (int)(end - start));
+        if (sqlFilename != nullptr) {
+           pgsql_exec_simple_set_redirect(nullptr);
+        }
+	fprintf(stderr, "All indexes on %s created in %ds\n", name.c_str(), (int)(end - start));
     }
     teardown();
 

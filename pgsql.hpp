@@ -15,6 +15,7 @@ PGresult *pgsql_execPrepared( PGconn *sql_conn, const char *stmtName, const int 
 void pgsql_CopyData(const char *context, PGconn *sql_conn, const char *sql, int len);
 std::shared_ptr<PGresult> pgsql_exec_simple(PGconn *sql_conn, const ExecStatusType expect, const std::string& sql);
 std::shared_ptr<PGresult> pgsql_exec_simple(PGconn *sql_conn, const ExecStatusType expect, const char *sql);
+void pgsql_exec_simple_set_redirect(char *filename);
 int pgsql_exec(PGconn *sql_conn, const ExecStatusType expect, const char *fmt, ...)
 #ifndef _MSC_VER
  __attribute__ ((format (printf, 3, 4)))
